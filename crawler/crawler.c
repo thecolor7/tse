@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <unistd.h>
 #include "webpage.h"
 #include "queue.h"
 #include "hash.h"
@@ -22,6 +23,47 @@
 // Making a simple helper function to check if if the current element is in the hashtable
 bool searchURL(void* elementp, const void* searchkeyp) {
 	return strcmp((char*)elementp, (const char*)searchkeyp) == 0;
+}
+
+//Step 5 - Save one page function (EVE)
+int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
+	bool writable = false;
+	FILE *fp = NULL;
+	
+	//Create filename from integer id
+	char filename[10];
+
+	//check that the directory is writable
+	if (access(dirname, W_OK) == 0) {
+		writable = true;
+	}
+
+	if (writable) {
+		//open and check for the file - file needs path to directory as well
+		sprintf(filename, "./%s/%d", dirname, id);
+		fp = fopen(filename, "w");
+		if (fp == NULL) {
+			printf("File %s could not be opened\n", filename);
+			return(1);
+		}
+		
+		//Print all info to the file
+		fprintf(fp, "%s\n", webpage_getURL(pagep));
+		fprintf(fp, "%d\n", webpage_getDepth(pagep));
+		fprintf(fp, "%d\n", webpage_getHTMLlen(pagep));
+
+		//Seems to not be printing any whitespace - should I be using something else?
+		fprintf(fp, "%s", webpage_getHTML(pagep));
+
+		fclose(fp);
+
+		//do not try to complete if directory is not accessible
+	} else {
+		printf("Can't access %s\n", dirname);
+		return(1);
+	}
+	
+	return(0);
 }
 
 int main (void) {
@@ -86,6 +128,9 @@ int main (void) {
 		}
 	}
 
+	//Call for step 5
+	pagesave(new, 1, "pages");
+	
 	//free whole webpage
 	webpage_delete(new);
 
@@ -107,6 +152,7 @@ int main (void) {
 	hclose(htp);
 	
 	exit(EXIT_SUCCESS);
+
 	
 	return(0);
 	
