@@ -93,6 +93,7 @@ void expand(int depth, webpage_t *page, hashtable_t *htp, queue_t *qp) {
 						qput(qp, wp);
 					} else {
 						printf("Failed to fetch");
+						webpage_delete(wp);
 				  }
 				} else {
 					// In this case we have already seen this URL already so we disregard it and continue
@@ -130,7 +131,7 @@ int main (int argc, char *argv[]) {
 	}
 
 	//Checks if max depth is negative, fails if so
-	if (maxDepth<0) {
+	if (d<0) {
 		printf("usage: crawler <seedurl> <pagedir> <maxdepth> 1\n");
 		exit(EXIT_FAILURE);
 	}
