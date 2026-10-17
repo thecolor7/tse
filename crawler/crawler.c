@@ -10,27 +10,16 @@
  */
 
 #include <stdio.h>
-
 #include <stdlib.h>
-
 #include <string.h>
-
 #include <stdbool.h>
-
 #include <unistd.h>
-
 #include <sys/types.h>
-
 #include <sys/stat.h>
-
 #include "webpage.h"
-
 #include "queue.h"
-
 #include "hash.h"
-
 #include <inttypes.h>
-
 
 
 //make sure to link .a file in make for .h files
