@@ -19,6 +19,7 @@
 #include "webpage.h"
 #include "queue.h"
 #include "hash.h"
+#include <inttypes.h>
 
 //make sure to link .a file in make for .h files
 
@@ -62,7 +63,7 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
 		fprintf(fp, "%d\n", webpage_getHTMLlen(pagep));
 
 		//Seems to not be printing any whitespace - should I be using something else?
-		fprintf(fp, "%s", webpage_getHTML(pagep));
+		fprintf(fp, "%s\n", webpage_getHTML(pagep));
 
 		fclose(fp);
 
@@ -75,39 +76,14 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
 	return(0);
 }
 
-int main (void) {
-
-	// Opening a new queue and hastable
-	queue_t *qp = qopen();
-	hashtable_t *htp = hopen(100);
-	webpage_t *queued_wp = NULL;
-	
-	// Checking for proper initialization of que and hashtable
-	if (qp == NULL || htp == NULL) return EXIT_FAILURE;
-
-	// Creating and putting a seed url into the hashtable so that it is considered visted and left alone
-	char *seed_url_str = malloc(strlen("https://thayer.github.io/engs50/") + 1);
-	// Checking for proper Malloc allocation
-	if (seed_url_str == NULL) return EXIT_FAILURE;
-	strcpy(seed_url_str, "https://thayer.github.io/engs50/");
-	// Creating and storing seed url into the first hash element
-	hput(htp, seed_url_str, seed_url_str, strlen(seed_url_str));
-
-	//create new webpage
-	webpage_t *new = webpage_new("https://thayer.github.io/engs50/", 0, NULL);
-
-	
-	//exit on failrure to create
-	if (!webpage_fetch(new)) {
-		printf("failed to fetch");
-		exit(EXIT_FAILURE);
-	}
-
+//Step 6 - something
+void expand(int depth, webpage_t *page, hashtable_t *htp, queue_t *qp) {
 	//loop through webpage for all urls
 	int i = 0;
 	char *url;
 
-	while ((i = webpage_getNextURL(new, i, &url)) > 0) {
+	//while there are more urls to get
+	while ((i = webpage_getNextURL(page, i, &url)) > 0) {
 		//check if internal or external
 		if (IsInternalURL(url)) {
 
@@ -119,11 +95,11 @@ int main (void) {
 					hput(htp, url, url, strlen(url));
 
 					// Now to create the webpage for the new unvisited internal URL
-					webpage_t *wp = webpage_new(url, 0, NULL);
+					webpage_t *wp = webpage_new(url, depth, NULL);
+					if(webpage_fetch(wp)) {
+						qput(qp, wp);
+					}
 
-					// Now to append the new webpage into our queue for processing later
-					qput(qp, wp);
-					
 				} else {
 
 					// In this case we have already seen this URL already so we disregard it and continue
@@ -136,21 +112,91 @@ int main (void) {
 			free(url); //make sure to free each url
 		}
 	}
+}
 
-	//Call for step 5
-	pagesave(new, 1, "pages");
+int main (int argc, char *argv[]) {
+
+	//Step 6: Handling command line calls - Genevieve
+	char *seedURL, *pageDir;
+	double d;
+	uint32_t maxDepth;
+	struct stat st;
+
+	//Checks for correct number of arguments
+	if (argc != 4) {
+		printf("usage: crawler <seedurl> <pagedir> <maxdepth> 3\n");
+		exit(EXIT_FAILURE);
+	}
+
+	seedURL = argv[1];
+	pageDir = argv[2];
+	d = strtod(argv[3], NULL);
+
+	//Checks if given directory exists
+	if (stat(pageDir, &st) != 0 || !S_ISDIR(st.st_mode)) {
+		printf("usage: crawler <seedurl> <pagedir> <maxdepth>2 \n");
+		exit(EXIT_FAILURE);
+	}
+
+	//Checks if max depth is negative, fails if so
+	if (maxDepth<0) {
+		printf("usage: crawler <seedurl> <pagedir> <maxdepth> 1\n");
+		exit(EXIT_FAILURE);
+	}
+
+	//Casts depth to an integer
+	maxDepth = (uint32_t)d;
 	
-	//free whole webpage
-	webpage_delete(new);
+	// Opening a new queue and hastable
+	queue_t *qp = qopen();
+	hashtable_t *htp = hopen(100);
+	webpage_t *queued_wp = NULL;
+	
+	// Checking for proper initialization of que and hashtable
+	if (qp == NULL || htp == NULL) return EXIT_FAILURE;
+
+	// Creating and putting a seed url into the hashtable so that it is considered visted and left alone
+	char *seed_url_str = malloc(strlen(seedURL) + 1);
+	// Checking for proper Malloc allocation
+	if (seed_url_str == NULL) return EXIT_FAILURE;
+	strcpy(seed_url_str, seedURL);
+	// Creating and storing seed url into the first hash element
+	hput(htp, seed_url_str, seed_url_str, strlen(seed_url_str));
+
+
+	int depth = 0;
+	int id = 1;
+	
+	//create seed webpage
+	webpage_t *new = webpage_new(seedURL, depth, NULL);
+
+	if(webpage_fetch(new)) {
+		qput(qp, new);
+	}
+
+	
+	//exit on failrure to create
+	if (!webpage_fetch(new)) {
+		printf("failed to fetch");
+		exit(EXIT_FAILURE);
+	}
 
 	// Now to iterate through the queue by getting entries and then freeing the memmory of the element
 	while ( (queued_wp = (webpage_t*)qget(qp)) != NULL) {
+		depth = webpage_getDepth(queued_wp);
+		if (depth < maxDepth) {
+			expand(depth + 1, queued_wp, htp, qp);
+		}
+
+		//Call for step 5
+		pagesave(queued_wp, id, pageDir);
 		
 		// Printing the URLs that were put in the queue
-		printf("Internal URL: %s\n", webpage_getURL(queued_wp));
+		//printf("Internal URL: %s\n", webpage_getURL(queued_wp));
 
 		// Now to free the weppage structure from the queue
 		webpage_delete(queued_wp);
+		id+=1;
 	}
 
 	// Freeing the que structure not that the internal elements have been cleared
