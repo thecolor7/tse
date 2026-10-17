@@ -91,7 +91,9 @@ void expand(int depth, webpage_t *page, hashtable_t *htp, queue_t *qp) {
 					webpage_t *wp = webpage_new(url, depth, NULL);
 					if(webpage_fetch(wp)) {
 						qput(qp, wp);
-					}
+					} else {
+						printf("Failed to fetch");
+				  }
 				} else {
 					// In this case we have already seen this URL already so we disregard it and continue
 					free(url);
@@ -168,10 +170,8 @@ int main (int argc, char *argv[]) {
 
 	if(webpage_fetch(new)) {
 		qput(qp, new);
-	}
-
 	//exit on failrure to create
-	if (!webpage_fetch(new)) {
+	} else {
 		printf("failed to fetch");
     qclose(qp);
     qp = NULL;
