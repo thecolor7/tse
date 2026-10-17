@@ -83,12 +83,18 @@ int main (void) {
 	webpage_t *queued_wp = NULL;
 	
 	// Checking for proper initialization of que and hashtable
-	if (qp == NULL || htp == NULL) return EXIT_FAILURE;
+	if (qp == NULL || htp == NULL) exit(EXIT_FAILURE);
 
 	// Creating and putting a seed url into the hashtable so that it is considered visted and left alone
 	char *seed_url_str = malloc(strlen("https://thayer.github.io/engs50/") + 1);
 	// Checking for proper Malloc allocation
-	if (seed_url_str == NULL) return EXIT_FAILURE;
+	if (seed_url_str == NULL) {
+		qclose(qp);
+		qp = NULL;
+		hclose(htp);
+		htp = NULL;
+		exit(EXIT_FAILURE);
+	}
 	strcpy(seed_url_str, "https://thayer.github.io/engs50/");
 	// Creating and storing seed url into the first hash element
 	hput(htp, seed_url_str, seed_url_str, strlen(seed_url_str));
@@ -100,6 +106,12 @@ int main (void) {
 	//exit on failrure to create
 	if (!webpage_fetch(new)) {
 		printf("failed to fetch");
+		qclose(qp);
+    qp = NULL;
+    hclose(htp);
+    htp = NULL;
+		free(seed_url_str);
+		seed_url_str = NULL;
 		exit(EXIT_FAILURE);
 	}
 
@@ -128,19 +140,21 @@ int main (void) {
 
 					// In this case we have already seen this URL already so we disregard it and continue
 					free(url);
+					url = NULL;
 				}
 			
 		} else {
 
 			// The URL is external so we just free it and do nothing with it
 			free(url); //make sure to free each url
+			url = NULL;
 		}
 	}
-
+	
 	//Call for step 5
 	pagesave(new, 1, "pages");
 	
-	//free whole webpage
+	// free whole webpage
 	webpage_delete(new);
 
 	// Now to iterate through the queue by getting entries and then freeing the memmory of the element
