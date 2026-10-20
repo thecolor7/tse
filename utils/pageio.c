@@ -19,13 +19,14 @@
 #include "webpage.h"
 #include "pageio.h"
 
+//loads and existing webpage to a file (id in dirnm) - same as code used in module 4
 int32_t pagesave(webpage_t *pagep, int id, char *dirnm) {
   bool writable = false;
   struct stat buffer;
   FILE *fp = NULL;
 
   //Create filename from integer id
-  char filename[10];
+  char filename[20];
 
   //check that the directory is writable
   if (access(dirnm, W_OK) == 0) {
@@ -62,18 +63,19 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirnm) {
   return(0);
 }
 
+//loads an existing page file to a webpage_t
 webpage_t *pageload(int id, char *dirnm) {
 	bool writable = false;
   FILE *fp = NULL;
   //Create filename from integer id
-  char filename[10];
+  char filename[200];
 
 	webpage_t *new = NULL;
-	char *url = NULL;
+	char  url[2000];
 	int depth = 0;
 	int len = 0;
-	char *html = NULL;
-
+	char *html;
+	
   //check that the directory is writable
   if (access(dirnm, W_OK) == 0) {
     writable = true;
@@ -90,27 +92,30 @@ webpage_t *pageload(int id, char *dirnm) {
       return(NULL);
     }
 
-		fscanf(fp, "%s", url);
+		fscanf(fp, "%1999s", url);
 		fscanf(fp, "%d", &depth);
 		fscanf(fp, "%d", &len);
 
-		//how to handle html that might be in a bad format
+		//how to handle html that might be in a bad format (includes '\n')
 		html = malloc(len*sizeof(char) + 1);
 		if (html == NULL) {
 			printf("Malloc failed\n");
 			fclose(fp);
 			return(NULL);
 		}
-		
+
 		int i = 0;
-		char ch;
+		int ch = 0;
 		do {
-			ch = fgetc(fp);	
-			html[i] = ch;
-			i++;
-		} while (ch != EOF && ch != '\n');
-			
+			ch = fgetc(fp);
+			if (ch != EOF) {
+				html[i] = (char)ch;
+				i++;
+			}
+		} while (ch != EOF && i <= len);
 		html[i] = '\0';
+		printf("%s\n", html);
+		fflush(stdout);
 
 		//create new webpage
 		new = webpage_new(url, depth, html);
@@ -119,5 +124,6 @@ webpage_t *pageload(int id, char *dirnm) {
 		fclose(fp);
 		return(new); //handles making new NULL if it fails
 	}
+	printf("Not a writable directory\n");
 	return(NULL);
 }

@@ -4,10 +4,13 @@ LIBS=-lutils -lcurl
 # build the .o files, then use ar to create(cr) the libutils.a in the lib directory
 .PHONY:				all clean
 
-all:					crawler
+all:					crawler test
 
 crawler:			crawler.c
 							gcc $(CFLAGS) crawler.c $(LIBS) -o $@
 
+test:					test.c
+							gcc $(CFLAGS) test.c $(LIBS) -o $@
+
 clean:
-							rm -rf crawler
+							rm -rf crawler test
