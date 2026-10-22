@@ -24,11 +24,19 @@ int main(void) {
 	
 	//translate between loading and saving a page
 	loaded = pageload(1, "pages");
-	printf("loaded url = %s\n", webpage_getURL(loaded));
-	fflush(stdout);
-	pagesave(loaded, 2, "pages");
+	if (loaded == NULL) {
+		printf("failed to load page 1\n");
+		exit(EXIT_FAILURE);
+	}
+ 	pagesave(loaded, 2, "pages");
 	loaded2 = pageload(2, "pages");
-
+	if (loaded2 == NULL) {
+    printf("failed to load page 2\n");
+		webpage_delete(loaded);
+		loaded = NULL;
+    exit(EXIT_FAILURE);
+  }
+	
 	//boolean values for checks
 	bool depths = (webpage_getDepth(loaded) == webpage_getDepth(loaded2));
 	bool lens = (webpage_getHTMLlen(loaded) == webpage_getHTMLlen(loaded2));

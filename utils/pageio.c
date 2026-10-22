@@ -77,7 +77,7 @@ webpage_t *pageload(int id, char *dirnm) {
 	char *html;
 	
   //check that the directory is writable
-  if (access(dirnm, W_OK) == 0) {
+  if (access(dirnm, R_OK) == 0) {
     writable = true;
   }
 
@@ -95,7 +95,8 @@ webpage_t *pageload(int id, char *dirnm) {
 		fscanf(fp, "%1999s", url);
 		fscanf(fp, "%d", &depth);
 		fscanf(fp, "%d", &len);
-
+		fgetc(fp);
+		
 		//how to handle html that might be in a bad format (includes '\n')
 		html = malloc(len*sizeof(char) + 1);
 		if (html == NULL) {
@@ -106,24 +107,20 @@ webpage_t *pageload(int id, char *dirnm) {
 
 		int i = 0;
 		int ch = 0;
-		do {
-			ch = fgetc(fp);
-			if (ch != EOF) {
-				html[i] = (char)ch;
-				i++;
-			}
-		} while (ch != EOF && i <= len);
+		while ((ch = fgetc(fp)) != EOF && i < len) {
+			 html[i] = (char)ch;
+			 i++;
+		}
 		html[i] = '\0';
-		printf("%s\n", html);
-		fflush(stdout);
-
+		
 		//create new webpage
-		new = webpage_new(url, depth, html);
-		free(html);
-		html = NULL;
+		if ((new = webpage_new(url, depth, html)) == NULL ) {
+			free(html);
+			html = NULL;
+		}
 		fclose(fp);
 		return(new); //handles making new NULL if it fails
 	}
-	printf("Not a writable directory\n");
+	printf("Not a readable directory\n");
 	return(NULL);
 }
