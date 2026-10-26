@@ -19,6 +19,112 @@
 #include <ctype.h>
 #include "webpage.h"
 #include "pageio.h"
+#include "hash.h"
+#include "queue.h"
+//constant value for summing the word counts
+static int globalSum = 0;
+
+//"document_t" sturcture, holds a document id and a count for how many times a word appeared; each word in the index has a
+//queue that will hold these 
+typedef struct document {
+	int id;
+	int count;
+} document_t;
+
+//creates a new document_t
+document_t* createDoc(int docID) {
+	document_t *newDoc = malloc(sizeof(document_t));
+	if (newDoc == NULL) return NULL;
+
+	newDoc->id = docID;
+	newDoc->count = 1;
+	return newDoc;
+}
+
+//frees document_t
+void freeDoc(void *document) {
+	if (document != NULL) {
+		document_t *doc = (document_t *)document;
+		free(doc);
+	}
+}
+
+//"word_t" structure, holds a word and a queue of document_t structures; the index hashtable will hold this
+typedef struct word {
+	char *word;
+	queue_t *docs;
+} word_t;
+
+//creates a new word_t
+word_t* createWord(char *word) {
+	word_t *newWord = malloc(sizeof(word_t));
+	if (newWord == NULL) return NULL;
+
+	char *wordCopy = malloc(strlen(word) + 1); //+1 for the null terminator
+	if (wordCopy == NULL) {
+		free(newWord);
+		return NULL;
+	}			
+
+	strcpy(wordCopy, word);
+	
+	newWord->word = wordCopy;
+	newWord->docs = qopen();
+	return newWord;
+}
+
+//frees word_t
+void freeWord(void *word) {
+	if (word != NULL) {
+		word_t *currentWord = (word_t *)word;
+
+		if (currentWord->docs != NULL) {
+			qapply(currentWord->docs, freeDoc);
+			qclose(currentWord->docs);
+		}
+		free(currentWord->word);
+		free(currentWord);
+	}
+}
+
+//Made a simple helper function to check if current element is in the hashtable
+bool searchWord(void* elementp, const void* searchkeyp) {
+	if (elementp == NULL || searchkeyp == NULL) {
+		return false;
+	}
+
+	word_t *currentWord = (word_t*)elementp;
+	
+	return strcmp(currentWord->word, (const char*)searchkeyp) == 0;
+}
+
+//Made a simple helper function to determine if a document is in the docs queue
+bool searchDoc(void* elementp, const void* docAddress) {
+	if (elementp == NULL || docAddress == NULL) {
+		return false;
+	}
+	int docID = *(const int*)docAddress;
+	document_t *currentDoc = (document_t*)elementp;
+
+	return currentDoc->id == docID;
+}
+
+//adds the count of a word to the total word count; used in the sumwords function
+void wordSum(void* elementp) {
+	document_t *currentDoc = (document_t*)elementp;
+	
+	globalSum += currentDoc->count;
+	return;
+}
+
+//applies the wordSum function to each document_t in the docs queue from the word_t it is given
+void sumwords(void* elementp) {
+	word_t *currentWord = (word_t*)elementp;
+
+	
+	qapply(currentWord->docs, wordSum);
+	return;
+}
 
 //normalizing defined as removing words with less than 3 characters or non alphabetical characters, and making all lowercase
 //only returns 0 for a word made lowercase, used to then only print these words. Deleted words or just null terminators
@@ -52,23 +158,69 @@ int NormalizeWord(char *word) {
 
 int main(void) {
 	webpage_t *page1 = NULL;
-
+	int docID = 1;
+	hashtable_t *index = hopen(100);
+	
 	page1 = pageload(1, "../crawler/pages");
 	if (page1 == NULL) {
 		printf("page1 failed to load\n");
 		return(1);
 	}
+	//checks for proper initialization of hashtable, could potentially be combined with previous check
+	if (index == NULL) return(1);
 
+	
 	int i = 0;
 	char *current;
+	void *match;
+	void *docMatch;
+	
 	while ((i = webpage_getNextWord(page1, i, &current)) != -1) {
 		if (NormalizeWord(current) == 0) {
 			printf("%s\n", current);  //I used indexer > normalizedOUtput.txt to get a file and wc gave 141 words
+
+			//searches if the current word is already in the index (hashtable)
+			if ((match = hsearch(index, searchWord, current, strlen(current))) == NULL) {
+
+				//creates a copy of the word
+				char *keyCopy = malloc(strlen(current) + 1); //+1 for the null terminator
+				if (keyCopy != NULL) {
+					strcpy(keyCopy, current);
+				}
+
+				//this case runs if the word has not been found, makes new word and document 
+				word_t *currentWord = createWord(keyCopy);
+				document_t *currentDoc = createDoc(docID);
+				
+				qput(currentWord->docs, currentDoc);
+
+				hput(index, (void*)currentWord, keyCopy, strlen(current));
+				free(keyCopy);
+			} else {
+				 
+				word_t *currentWord = (word_t*)match;
+				if ((docMatch = qsearch(currentWord->docs, searchDoc, &docID)) == NULL) {
+
+					document_t *currentDoc = (document_t*)docMatch;
+					currentDoc->id +=1;
+				} else {
+					document_t *currentDoc = createDoc(docID);
+					qput(currentWord->docs, currentDoc);
+				}
+			}
 		}
 		free(current);
 	}
 
-	free(current);
 	webpage_delete(page1);
+	
+	globalSum = 0;
+
+	happly(index, sumwords);
+	printf("This is the result for the hashtable summation: %d\n", globalSum);
+	happly(index, freeWord);
+	hclose(index);
+	
+
 	return(0);
 }
