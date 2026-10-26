@@ -1,5 +1,5 @@
 CFLAGS=-Wall -pedantic -std=c11 -I. -g
-OFILES=queue.o hash.o webpage.o
+OFILES=queue.o hash.o webpage.o pageio.o
 
 # build the .o files, then use ar to create(cr) the libutils.a in the lib directory
 all:					$(OFILES)
