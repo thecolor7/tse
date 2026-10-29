@@ -200,8 +200,13 @@ int main(int argc, char *argv[]) {
 		char *current;
 		void *match;
 		void *docMatch;
-	
+
+		int j = 0;
 		while ((i = webpage_getNextWord(page, i, &current)) != -1) {
+			if (j < 10) {
+				printf("%s\n", current);
+				j++;
+			}
 			if (NormalizeWord(current) == 0) {
 
 				//searches if the current word is already in the index (hashtable)

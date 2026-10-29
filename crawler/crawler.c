@@ -51,7 +51,7 @@ void expand(int depth, webpage_t *page, hashtable_t *htp, queue_t *qp) {
 					} else {
 						printf("Failed to fetch");
 						webpage_delete(wp);
-				  }
+						}
 				} else {
 					// In this case we have already seen this URL already so we disregard it and continue
 					free(url);
