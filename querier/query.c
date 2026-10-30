@@ -14,20 +14,67 @@
 #include <string.h>
 #include <stdbool.h>
 #include <ctype.h>
+#include "queue.h"
 
-int searchFile(char *key) {
+//structure for how this stores documents and functions to manage
+typedef struct doc {
+	int docId;
+	int docRank;
+	char docUrl[200];
+} doc_t;
+
+doc_t* createDoc(int docID, int rank) {
+	char file[200];
+	FILE *fp;
+  doc_t *newDoc = malloc(sizeof(doc_t));
+  if (newDoc == NULL) return NULL;
+
+  newDoc->docId = docID;
+  newDoc->docRank = rank;
+	//get the url
+	sprintf(file, "../crawler/pages/%d", docID);
+	fp = fopen(file, "r");
+	fscanf(fp, "%s", newDoc->docUrl);
+	fclose(fp);
+	
+  return newDoc;
+}
+
+//frees document_t
+void freeDoc(void *document) {
+  if (document != NULL) {
+    doc_t *doc = (doc_t *)document;
+    free(doc);
+  }
+}
+
+void printDoc(doc_t *document) {
+	printf("rank:%d:doc:%d : %s\n", document->docRank, document->docId, document->docUrl);
+}
+
+
+//given a keyword and page, find the count for that page
+int searchFile(char *key, int id) {
 	FILE *fp;
 	char word[100];
-	int count, fileNum;
+	int count = 0;
+	int file = 0;
 
 	//name and open
 	fp = fopen("../indexer/rankTest.txt", "r");
 
 	//scan file for info - ONLY WORKS FOR ONE PAGE
-	while (fscanf(fp, "%s %d %d", word, &fileNum, &count) != EOF) {
+	while (fscanf(fp, "%s", word) != EOF) {
 		if (strcmp(word, key) == 0) {
-			fclose(fp);
-			return(count);
+			while (fscanf(fp, "%d %d", &file, &count) == 2) {
+				if (file == id) {
+					fclose(fp);
+					return(count);
+				}
+				else if (file > id) {
+					break;
+				}
+			}
 		}
 	}
 	
@@ -45,7 +92,8 @@ int main(void) {
 	int min, count;
 	bool done = false;
 	bool spec = false;
-
+	doc_t *newDoc;
+	
 	do {
 		spec = false;
 		
@@ -110,15 +158,21 @@ int main(void) {
 			}
 
 			//search each word
-			min = -1;
-			for (int k = 0; k < j; k++) {
-				count = searchFile(search[k]);
-				printf("%s:%d ", search[k], count);
-				if (min == -1 || count < min) {
-					 min = count;
+			queue_t *qp = qopen();
+			for (int page = 1; page <= 7; page++) { //need to fix to be more universal (how do I find number of pages)
+				min = -1;
+				for (int k = 0; k < j; k++) {
+					count = searchFile(search[k], page);
+					if (min == -1 || count < min) {
+						min = count;
+					}
 				}
+				newDoc = createDoc(page, min);
+				qput(qp, newDoc);
+				printDoc(newDoc);
+				freeDoc(newDoc);
 			}
-			printf("-- %d\n", min);
+			qclose(qp);
 		}
 
 		//free all
