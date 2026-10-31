@@ -189,7 +189,7 @@ int main(void) {
 		printf("\n");
 
 		// Now that we know the number of documents we can create an array of documents to hold documents for ranking output
-		doc_t *results[maxDocs];
+		queue_t *qp = qopen();
 		int resultCount = 0;
 
 		// main loop that will run all of the query logic
@@ -223,27 +223,37 @@ int main(void) {
 
 			// If we got a total_score greater then 0 then we know the document was a match and we will save it's data into results
 			if (total_score > 0) {
-				results[resultCount++] = createDoc(page, total_score);
+				doc_t *match = createDoc(page, total_score);
+				qput(qp, match);
+				resultCount++;
 			}
 		}
 
+		// Extracting from our queue to sort
+		doc_t *sortedDocs[resultCount];
+		for (i=0; i < resultCount; i++) {
+			sortedDocs[i] = qget(qp);
+		}
+		
 		// Now to sort our results by rank in descending order
 		for (int i=0; i < resultCount-1; i++) {
 			for (j = 0; j < resultCount-i-1; j++) {
-				if (results[j]->docRank < results[j+1]->docRank) {
-					doc_t *temp = results[j];
-					results[j] = results[j+1];
-					results[j+1] = temp;
+				if (sortedDocs[j]->docRank < sortedDocs[j+1]->docRank) {
+					doc_t *temp = sortedDocs[j];
+					sortedDocs[j] = sortedDocs[j+1];
+					sortedDocs[j+1] = temp;
 				}
 			}
 		}
 
 		// Now to print final results
 		for (i=0; i<resultCount; i++){
-			printDoc(results[i]);
-			freeDoc(results[i]);
+			printDoc(sortedDocs[i]);
+			freeDoc(sortedDocs[i]);
 		}
 
+		// Closing Queue
+		qclose(qp);
 	}
 
 	printf("\n\nEnding Quiery...\n\n");
