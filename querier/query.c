@@ -15,6 +15,7 @@
 #include <stdbool.h>
 #include <ctype.h>
 #include "queue.h"
+#include <sys/stat.h>
 
 //structure for how this stores documents and functions to manage
 typedef struct doc {
@@ -23,7 +24,7 @@ typedef struct doc {
 	char docUrl[200];
 } doc_t;
 
-doc_t* createDoc(int docID, int rank) {
+doc_t* createDoc(int docID, int rank, char *crawlDir) {
 	char file[200];
 	FILE *fp;
   doc_t *newDoc = malloc(sizeof(doc_t));
@@ -32,7 +33,8 @@ doc_t* createDoc(int docID, int rank) {
   newDoc->docId = docID;
   newDoc->docRank = rank;
 	//get the url
-	sprintf(file, "../crawler/pages/%d", docID);
+	//Genevieve changed this
+	sprintf(file, "%s/%d", crawlDir, docID);
 	fp = fopen(file, "r");
 	// MATTHEW EDIT: Added for edge case
 	if (fp != NULL) {
@@ -58,14 +60,15 @@ void printDoc(doc_t *document) {
 }
 
 //given a keyword and page, find the count for that page
-int searchFile(char *key, int id) {
+int searchFile(char *key, int id, char *indexFile) {
 	FILE *fp;
 	char word[100];
 	int count = 0;
 	int file = 0;
 	
 	//name and open
-	fp = fopen("../indexer/rankTest.txt", "r");
+	//Genevieve changed this
+	fp = fopen(indexFile, "r");
 	// MATTHEW EDIT: Added just as a safeguard
 	if (fp == NULL) return 0;
 	
@@ -88,8 +91,38 @@ int searchFile(char *key, int id) {
 	return(0);
 }
 
-int main(void) {
+int main(int argc, char *argv[]) {
+	//Step 5: Handling command line calls - Genevieve
+	char *pagedir, *indexnm;
+	//bool quiet = false;
+	struct stat st;
 
+	//Checks for the correct number of arguments
+	if (argc < 3 || argc > 4) {
+		printf("usage: query <pageDirectory> <indexFile> [-q]\n");
+		return(1);
+	}
+
+	//Handles the quiet flag
+  //if (argc == 4) {
+	//int qValue = strcmp("-q", argv[4]);
+	//if (qValue==0) {
+	//  quiet = true;
+	//} else {
+	//  printf("usage: query <pageDirectory> <indexFile> [-q]");
+	//  return(1);
+	//}
+	//}
+
+	pagedir = argv[1];
+	indexnm = argv[2];
+	
+	//Checks if given directory exists
+	if (stat(pagedir, &st) != 0 || !S_ISDIR(st.st_mode)){
+		printf("usage: query <pageDirectory> <indexFile> [-q]\n");
+		return(1);
+	}
+	
 	// MATTHEW EDIT: Commenting out now unused variables
 	//char *user = NULL;
 	//char **search = NULL;
@@ -106,7 +139,8 @@ int main(void) {
 	int maxDocs = 0;
 	while(1) {
 		char path[100];
-		sprintf(path, "../crawler/pages/%d", maxDocs + 1);
+		//Genevieve changed this
+		sprintf(path, "%s/%d", pagedir, maxDocs + 1);
 		FILE *fp = fopen(path, "r");
 		if (fp){
 			fclose(fp);
@@ -119,8 +153,8 @@ int main(void) {
 	// Creating main loop to stay in when the waiting for user input
 
 	while (1)  {
-		printf("> ");
-
+		 printf("> ");
+		
 		// Adding a check for a termination on EOF (Ctrl-D) input from user
 		if (fgets(buffer, sizeof(buffer), stdin) == NULL) {
 			break;
@@ -209,7 +243,7 @@ int main(void) {
 					and_score = -1;
 				} else {
 					// This runs when we are in a current AND sequence, aka, we are at a new word AND we are not at a new OR operator, so we will search and count the occurances and saves the new count ONLY if it is either the start of a new AND sequence OR it is the new lower number of occurances
-					int occurances = searchFile(words[w], page);
+					int occurances = searchFile(words[w], page, indexnm);
 					if (and_score == -1 || occurances < and_score){
 						and_score = occurances;
 					}
@@ -223,7 +257,7 @@ int main(void) {
 
 			// If we got a total_score greater then 0 then we know the document was a match and we will save it's data into results
 			if (total_score > 0) {
-				doc_t *match = createDoc(page, total_score);
+				doc_t *match = createDoc(page, total_score, pagedir);
 				qput(qp, match);
 				resultCount++;
 			}

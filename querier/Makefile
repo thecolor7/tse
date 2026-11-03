@@ -4,13 +4,13 @@ LIBS=-lutils -lcurl
 # build the .o files, then use ar to create(cr) the libutils.a in the lib directory
 .PHONY:				all clean
 
-all:					querier
+all:					query
 
-querier:			query.c
+query:				query.c
 							gcc $(CFLAGS) query.c $(LIBS) -o $@
 
 #test:					test.c
 #							gcc $(CFLAGS) test.c $(LIBS) -o $@
 
 clean:
-							rm -rf querier
+							rm -rf query
