@@ -1,5 +1,5 @@
 CFLAGS=-Wall -pedantic -std=c11 -I. -g
-OFILES=lqueue.o queue.o hash.o webpage.o pageio.o indexio.o
+OFILES=lhash.o lqueue.o queue.o hash.o webpage.o pageio.o indexio.o testLhash.o
 
 # build the .o files, then use ar to create(cr) the libutils.a in the lib directory
 all:					$(OFILES)
@@ -10,8 +10,8 @@ all:					$(OFILES)
 							gcc $(CFLAGS) -c $<
 
 #need one of these per test
-#testmfile:		hash.o queue.o testmfile.o
-#							gcc $(CFLAGS) hash.o queue.o testmfile.o -o $@
+testLhash:		lhash.o testLhash.o
+							gcc $(CFLAGS) lhash.o testLhash.o -o $@
 
 clean:
-							rm -rf *.o
+							rm -rf *.o testLhash 

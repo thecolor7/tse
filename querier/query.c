@@ -94,7 +94,7 @@ int searchFile(char *key, int id, char *indexFile) {
 int main(int argc, char *argv[]) {
 	//Step 5: Handling command line calls - Genevieve
 	char *pagedir, *indexnm;
-	//bool quiet = false;
+	bool quiet = false;
 	struct stat st;
 
 	//Checks for the correct number of arguments
@@ -104,15 +104,15 @@ int main(int argc, char *argv[]) {
 	}
 
 	//Handles the quiet flag
-  //if (argc == 4) {
-	//int qValue = strcmp("-q", argv[4]);
-	//if (qValue==0) {
-	//  quiet = true;
-	//} else {
-	//  printf("usage: query <pageDirectory> <indexFile> [-q]");
-	//  return(1);
-	//}
-	//}
+  if (argc == 4) {
+		int qValue = strcmp("-q", argv[3]);
+		if (qValue==0) {
+			quiet = true;
+		} else {
+			printf("usage: query <pageDirectory> <indexFile> [-q]");
+			return(1);
+		}
+	}
 
 	pagedir = argv[1];
 	indexnm = argv[2];
@@ -153,7 +153,9 @@ int main(int argc, char *argv[]) {
 	// Creating main loop to stay in when the waiting for user input
 
 	while (1)  {
-		 printf("> ");
+		if (!quiet) {
+			printf("> ");
+		}
 		
 		// Adding a check for a termination on EOF (Ctrl-D) input from user
 		if (fgets(buffer, sizeof(buffer), stdin) == NULL) {
