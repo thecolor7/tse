@@ -10,8 +10,8 @@ all:					$(OFILES)
 							gcc $(CFLAGS) -c $<
 
 #need one of these per test
-testLhash:		lhash.o testLhash.o
-							gcc $(CFLAGS) lhash.o testLhash.o -o $@
+testLhash:		testLhash.o lhash.o hash.o queue.o
+							gcc $(CFLAGS) lhash.o hash.o queue.o testLhash.o -o $@ -lpthread
 
 clean:
 							rm -rf *.o testLhash 

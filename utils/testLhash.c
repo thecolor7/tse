@@ -2,10 +2,10 @@
  * testLhash.c --- 
  * 
  * Author: Eve H. Belding
- * Created: 11-10-2026
+ * Created: 11-11-2026
  * Version: 1.0
  * 
- * Description: 
+ * Description: currently, this is compiling, reaching success, and has no leaks, but needs to test more functionality 
  * 
  */
 
@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-#include "lhash.c"
+#include "lhash.h"
 #include "queue.h"
 #include "hash.h"
 
@@ -44,18 +44,38 @@ void *test1(void *argp) {
 	}
 
 	student_t *s1 = makeStudent("Eve Belding", 29);
+	if (s1 == NULL) {
+		printf("failed to make s1");
+		lhclose(thp);
+		return(fail);
+	}
 	student_t *s2 = makeStudent("Genevieve Powell", 28);
+	if (s2 == NULL) {
+		printf("failed to make s2");
+		free(s1);
+		lhclose(thp);
+		return(fail);
+	}
 	//student_t *s3 = makeStudent("Matthew Morales", 27);
-
+	
 	if (lhput(thp, s1, s1->name, strlen(s1->name))){
 		printf("failed to put s1");
+		free(s1);
+		free(s2);
+		lhclose(thp);
 		return(fail);
 	}
 	if (lhput(thp, s2, s2->name, strlen(s2->name))){
 		printf("failed to put s2");
+		free(s1);
+		free(s2);
+		lhclose(thp);
 		return(fail);
 	}
 
+	printf("Success\n");
+	free(s1);
+	free(s2);
 	lhclose(thp);
 	return((void *)(0));
 	
