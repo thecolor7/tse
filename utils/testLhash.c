@@ -32,6 +32,16 @@ student_t *makeStudent(char sname[20], int syear) {
 	return(s);
 }
 
+void printStudent(void *student) {
+	student_t *s = (student_t *)student;
+	printf("%s, %d\n", s->name, s->year);
+}
+
+/* bool findStudent(void *element, const void *key) {
+	 student_t *s = (student_t *)element;
+	 const char *name = (const char *)key;
+ */
+	 
 void *test1(void *argp) {
 	lhash_t *thp;
 	void *fail = (void *)(1);
@@ -56,12 +66,20 @@ void *test1(void *argp) {
 		lhclose(thp);
 		return(fail);
 	}
-	//student_t *s3 = makeStudent("Matthew Morales", 27);
+	student_t *s3 = makeStudent("Matthew Morales", 27);
+	if (s3 ==NULL) {
+		printf("failed to make s3");
+		free(s1);
+		free(s2);
+		lhclose(thp);
+		return(fail);
+	}
 	
 	if (lhput(thp, s1, s1->name, strlen(s1->name))){
 		printf("failed to put s1");
 		free(s1);
 		free(s2);
+		free(s3);
 		lhclose(thp);
 		return(fail);
 	}
@@ -69,10 +87,21 @@ void *test1(void *argp) {
 		printf("failed to put s2");
 		free(s1);
 		free(s2);
+		free(s3);
+		lhclose(thp);
+		return(fail);
+	}
+	if(lhput(thp, s3, s3->name, strlen(s3->name))) {
+		printf("failed to put s3");
+		free(s1);
+		free(s2);
+		free(s3);
 		lhclose(thp);
 		return(fail);
 	}
 
+	lhapply(thp, printStudent);
+	
 	printf("Success\n");
 	free(s1);
 	free(s2);
