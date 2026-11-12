@@ -80,11 +80,11 @@ void* lhsearch(lhash_t *lhp, bool (*searchfn)(void* elementp, const void* keyp),
 }
 
 void lhclose(lhash_t *lhp) {
+	//close queue
+  hclose(lhp->hp);
+
 	//destroy mutex
 	pthread_mutex_destroy(&(lhp->m));
-
-	//close queue
-	hclose(lhp->hp);
 
 	free(lhp);
 	
