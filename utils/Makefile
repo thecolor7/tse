@@ -14,4 +14,4 @@ testLhash:		lhash.o testLhash.o
 							gcc $(CFLAGS) lhash.o testLhash.o -o $@
 
 clean:
-							rm -rf *.o testLhash 
+							rm -rf *.o testLhash ../lib/libutils.a 

@@ -1,16 +1,19 @@
 CFLAGS=-Wall -pedantic -std=c11 -I../utils -L../lib -g
-LIBS=-lutils -lcurl
+LIBS=-lutils -lcurl -lpthread
 
 # build the .o files, then use ar to create(cr) the libutils.a in the lib directory
-.PHONY:				all clean
+.PHONY:				all clean	
 
-all:					indexer
+all:					indexer mt_indexer
 
 indexer:			indexer.c
 							gcc $(CFLAGS) indexer.c $(LIBS) -o $@
+
+mt_indexer: mt_indexer.c
+				gcc $(CFLAGS) mt_indexer.c $(LIBS) -o $@
 
 #test:					test.c
 #							gcc $(CFLAGS) test.c $(LIBS) -o $@
 
 clean:
-							rm -rf indexer
+							rm -rf indexer mt_indexer

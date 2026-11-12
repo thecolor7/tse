@@ -41,12 +41,16 @@ int32_t lqput(lqueue_t *lqp, void *elementp) {
 	pthread_mutex_lock(&(lqp->m));
 
 	//put in queue, return 1 if fails
-	if (qput(lqp->qp, elementp) == 1) return 1;
-
+	// Matthew Edit: if (qput(lqp->qp, elementp) == 1) return 1;
+	// Instead of immediately returning upon failure of qput, just storing the result in a status variable to return if successful and making sure the mutex lock is unlocked before returning
+	
+	// Put in queue and store the status
+	int32_t status = qput(lqp->qp, elementp);
+	
 	//unlock mutex
 	pthread_mutex_unlock(&(lqp->m));
 	
-	return 0;
+	return status;
 }
 
 void* lqget(lqueue_t *lqp) {
@@ -90,9 +94,15 @@ void* lqsearch(lqueue_t *lqp, bool (*searchfn)(void* elementp, const void* keyp)
 void lqclose(lqueue_t *lqp) {
 	//destroy mutex
 	pthread_mutex_destroy(&(lqp->m));
-
+	
 	//close queue
 	qclose(lqp->qp);
+
+	// Added this free to ensure no data leaks
+	// free the wrapper structure
+	free(lqp);
+	
+	//close queue
 	return;
 }
 

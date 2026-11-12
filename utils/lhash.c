@@ -16,7 +16,7 @@
 #include <pthread.h>
 
 typedef struct lhash {
-	queue_t *hp;
+	hashtable_t *hp;
 	pthread_mutex_t m;
 } lhash_t;
 
@@ -43,13 +43,15 @@ int32_t lhput(lhash_t *lhp, void *elementp, const char *key, int keylen) {
 	//lock mutex
 	pthread_mutex_lock(&(lhp->m));
 
-	//put in queue, return 1 if fails
-	if (hput(lhp->hp, elementp, key, keylen) == 1) return 1;
+	//put in queue, return 1 if fails - MATTHEW EDIT, Changed to ensure that the mutex is unlocked in every case before returning on failure or success
+	// if (hput(lhp->hp, elementp, key, keylen) == 1) return 1;
 
+	int32_t status = hput(lhp->hp, elementp, key, keylen);
+	
 	//unlock mutex
 	pthread_mutex_unlock(&(lhp->m));
 	
-	return 0;
+	return status;
 }
 
 void lhapply(lhash_t *lhp, void (*fn)(void* elementp)) {
@@ -83,6 +85,9 @@ void lhclose(lhash_t *lhp) {
 
 	//close queue
 	hclose(lhp->hp);
+
+	free(lhp);
+	
 	return;
 }
 
