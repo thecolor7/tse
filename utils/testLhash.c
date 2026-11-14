@@ -44,7 +44,7 @@ bool findStudent(void *element, const void *key) {
 	 return(strcmp(s->name, name) == 0);
 }
 
-//main test function
+//test 1 should print table, remove eve, print again
 void *test1(void *argp) {
 	lhash_t *thp = (lhash_t *)argp;
 
@@ -61,6 +61,7 @@ void *test1(void *argp) {
 	
 }
 
+//test 2 should just print
 void *test2(void *argp) {
 	lhash_t *thp = (lhash_t *)argp;
 
@@ -70,6 +71,7 @@ void *test2(void *argp) {
 	return((void *)(0));
 }
 
+//test 3 also tests lhput - should put in no name and remove genevieve, then print, then remove no name to stop leaks
 void *test3(void *argp) {
 	lhash_t *thp = (lhash_t *)argp;
 	student_t *s = makeStudent("No Name", 30);
@@ -94,7 +96,7 @@ int main(void) {
 	pthread_t tid2;
 	pthread_t tid3;
 
-	//Create different arguments to differ the tests
+	//Create the base hash table
 	lhash_t *hash = lhopen(10);
 	if (hash == NULL) {
 		exit(EXIT_FAILURE);
@@ -143,6 +145,7 @@ int main(void) {
     exit(EXIT_FAILURE);
   }
 
+	//End by freeing everything
 	if (s1 != NULL) free(s1);
   if (s2 != NULL) free(s2);
   if (s3 != NULL) free(s3);
