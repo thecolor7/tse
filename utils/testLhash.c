@@ -46,7 +46,6 @@ bool findStudent(void *element, const void *key) {
 
 //main test function
 void *test1(void *argp) {
-	void *fail = (void *)(1);
 	lhash_t *thp = (lhash_t *)argp;
 
 	printf("test 1\n");
@@ -73,11 +72,18 @@ void *test2(void *argp) {
 
 void *test3(void *argp) {
 	lhash_t *thp = (lhash_t *)argp;
-
-	printf("test 3\n");
+	student_t *s = makeStudent("No Name", 30);
 	
+	printf("test 3\n");
+	if (s != NULL) {
+		lhput(thp, s, s->name, strlen(s->name));
+	}
 	lhremove(thp, findStudent, "Genevieve Powell", strlen("Genevieve Powell"));
 	lhapply(thp, printStudent);
+	if (s != NULL) {
+		lhremove(thp, findStudent, "No Name", strlen("No Name"));
+		free(s);
+	}
 	
   return((void *)(0));
 }
