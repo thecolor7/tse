@@ -9,7 +9,8 @@
  * 
  */
 
-#include "queue.c"
+#include <stdlib.h>
+#include "queue.h"
 #include <pthread.h>
 
 typedef struct lqueue {
